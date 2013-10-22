@@ -1,5 +1,5 @@
 # SweetTooth
-A simplistic, sugarcoated, iOS CoreBluetooth Wrapper
+A simplistic, sugarcoated, Android BLE Wrapper
 
 ## Let's Get Down To Business
 
