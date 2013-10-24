@@ -2,6 +2,7 @@ package com.joshholtz;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import android.app.Activity;
 import android.app.Application;
@@ -155,9 +156,18 @@ public class SweetToothManager {
 	 * Starts scan
 	 */
 	public void start() {
+		start(new UUID[]{});
+	}
+	
+	/**
+	 * Starts scan for specific UUIDs
+	 * 
+	 * @param uuids
+	 */
+	public void start(UUID[] uuids) {
 		Log.d(LOG_TAG, "start()");
         scanning = true;
-        bluetoothAdapter.startLeScan(leScanCallback);
+        bluetoothAdapter.startLeScan(uuids, leScanCallback);
         
         for (SweetToothListener listener : listeners) {
 			listener.onScanningStateChange(scanning);
@@ -181,31 +191,89 @@ public class SweetToothManager {
 	
 	/**
 	 * Starts and stops scan on an interval
-	 * @param scanPeriod
+	 * @param scanPeriodOn
+	 * @param scanPeriodOff
 	 */
 	public void startOnInterval(long scanPeriodOn, long scanPeriodOff) {
+		startOnInterval(new UUID[]{}, scanPeriodOn, scanPeriodOff);
+	}
+	
+	/**
+	 * Starts and stops scan on an interval for specific UUIDs
+	 * @param uuids
+	 * @param scanPeriodOn
+	 * @param scanPeriodOff
+	 */
+	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff) {
 		scanning = true;
 	
 		for (SweetToothListener listener : listeners) {
 			listener.onScanningStateChange(scanning);
 		}
 		
-		doOnInterval(scanPeriodOn, scanPeriodOff);
+		doOnInterval(uuids, scanPeriodOn, scanPeriodOff);
 	}
 	
-	private void doOnInterval(final long scanPeriodOn, final long scanPeriodOff) {
+	/**
+	 * Helper method to check advertising data for a service ID.
+	 * Addresses Android 4.3 issue when trying to scan for a specific service
+	 * 
+	 * Example: beb54859b4b64affbc7fa12e8a3cd858
+	 * 
+	 * @param serviceUUID
+	 * @param scanRecord 
+	 * @return boolean
+	 */
+	public static boolean scanRecordHasService(String serviceUUID, byte[] scanRecord) {
+
+	    // UUID we want to filter by (without hyphens)
+		serviceUUID = serviceUUID.toUpperCase();
+
+	    // The offset in the scan record. In my case the offset was 13; it will probably be different for you
+	    final int serviceOffset = 15; 
+
+	    try{
+
+	        // Get a 16-byte array of what may or may not be the service we're filtering for
+	    	byte[] service = scanRecord;
+//	        byte[] service = ArrayUtils.subarray(scanRecord, serviceOffset, serviceOffset + 16);
+
+	        // The bytes are probably in reverse order, so we need to fix that
+	        ArrayUtils.reverse(service);
+
+	        // Get the hex string
+	        String discoveredServiceID = bytesToHex(service);
+	        Log.d(LOG_TAG, "Scan Record - " + discoveredServiceID);
+
+	        // Compare against our service
+	        return discoveredServiceID.contains(serviceUUID);
+
+	    } catch (Exception e){
+	        return false;
+	    }
+
+	}
+	
+	private static String bytesToHex(byte[] bytes) {
+		StringBuilder sb = new StringBuilder();
+	    for (byte b : bytes) {
+	        sb.append(String.format("%02X", b));
+	    }
+	    return sb.toString();
+	}
+	
+	private void doOnInterval(final UUID[] uuids, final long scanPeriodOn, final long scanPeriodOff) {
 		if (!scanning) return;
 		
 		for (SweetToothListener listener : listeners) {
 			listener.onScanningIntervalStateChange(true);
 		}
 		
-		bluetoothAdapter.startLeScan(leScanCallback);
+		bluetoothAdapter.startLeScan(uuids, leScanCallback);
 		
 		handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-            	Log.d(LOG_TAG, "STOPPING");                
                 bluetoothAdapter.stopLeScan(leScanCallback);
                 
                 for (SweetToothListener listener : listeners) {
@@ -215,8 +283,7 @@ public class SweetToothManager {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                    	Log.d(LOG_TAG, "STARTING");
-                    	doOnInterval(scanPeriodOn, scanPeriodOff);
+                    	doOnInterval(uuids, scanPeriodOn, scanPeriodOff);
                     }
                 }, scanPeriodOff);
             }

@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.logging.Logger;
 
+import com.joshholtz.ArrayUtils;
 import com.joshholtz.R;
 import com.joshholtz.SweetToothManager;
 import com.joshholtz.SweetToothManager.SweetToothListener;
@@ -45,7 +47,11 @@ public class MainActivity extends Activity implements SweetToothListener {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				if (isChecked) {
+//					UUID uuid = UUID.fromString("beb54859-b4b6-4aff-bc7f-a12e8a3cd858");
+//					UUID uuid = UUID.fromString("1800");
+//					Log.d(SweetToothManager.LOG_TAG, "UUID - " + uuid);
 					SweetToothManager.getInstance().startOnInterval(1000, 250);
+//					SweetToothManager.getInstance().startOnInterval(new UUID[]{ uuid }, 1000, 250);
 				} else {
 					SweetToothManager.getInstance().stop();
 				}
@@ -99,19 +105,19 @@ public class MainActivity extends Activity implements SweetToothListener {
     
 	@Override
 	public void onDiscoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord) {
-		
 		// Adds devices to list if it isn't already discovered
 		BluetoothDeviceWrapper wrapper = new BluetoothDeviceWrapper(device, System.currentTimeMillis());
 		if (!devices.contains(wrapper)) {
-			devices.add(wrapper);
-			lstViewAdapter.notifyDataSetChanged();
+			if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd858", scanRecord)) {
+				devices.add(wrapper);
+				lstViewAdapter.notifyDataSetChanged();
+			}
 		}
 
 	}
 	
 	/**
 	 * Wrapper for BluetoothDevice to hold when it was last seen
-	 * @author josh
 	 *
 	 */
 	public static class BluetoothDeviceWrapper {
