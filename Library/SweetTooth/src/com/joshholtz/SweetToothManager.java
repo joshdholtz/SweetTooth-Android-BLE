@@ -20,7 +20,9 @@ public class SweetToothManager {
 	public final static int REQUEST_BLE_ENABLE = 3011989;
 
 	public interface SweetToothListener {
-		public void discoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord);
+		public void onScanningStateChange(boolean scanning);
+		public void onScanningIntervalStateChange(boolean scanning);
+		public void onDiscoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord);
 	}
 	
 	/**
@@ -57,7 +59,9 @@ public class SweetToothManager {
 	private void initBluetoothManager() {
 		if (context != null) {
 			bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-			bluetoothAdapter = bluetoothManager.getAdapter();
+			if (bluetoothManager != null) {
+				bluetoothAdapter = bluetoothManager.getAdapter();
+			}
 		}
 	}
 	
@@ -136,6 +140,10 @@ public class SweetToothManager {
 		Log.d(LOG_TAG, "start()");
         scanning = true;
         bluetoothAdapter.startLeScan(leScanCallback);
+        
+        for (SweetToothListener listener : listeners) {
+			listener.onScanningStateChange(scanning);
+		}
 	}
 	
 	/**
@@ -147,6 +155,10 @@ public class SweetToothManager {
 		
 		scanning = false;
         bluetoothAdapter.stopLeScan(leScanCallback);
+        
+        for (SweetToothListener listener : listeners) {
+			listener.onScanningStateChange(scanning);
+		}
 	}
 	
 	/**
@@ -156,11 +168,19 @@ public class SweetToothManager {
 	public void startOnInterval(long scanPeriodOn, long scanPeriodOff) {
 		scanning = true;
 	
+		for (SweetToothListener listener : listeners) {
+			listener.onScanningStateChange(scanning);
+		}
+		
 		doOnInterval(scanPeriodOn, scanPeriodOff);
 	}
 	
 	private void doOnInterval(final long scanPeriodOn, final long scanPeriodOff) {
 		if (!scanning) return;
+		
+		for (SweetToothListener listener : listeners) {
+			listener.onScanningIntervalStateChange(true);
+		}
 		
 		bluetoothAdapter.startLeScan(leScanCallback);
 		
@@ -169,6 +189,10 @@ public class SweetToothManager {
             public void run() {
             	Log.d(LOG_TAG, "STOPPING");                
                 bluetoothAdapter.stopLeScan(leScanCallback);
+                
+                for (SweetToothListener listener : listeners) {
+        			listener.onScanningIntervalStateChange(false);
+        		}
                 
                 handler.postDelayed(new Runnable() {
                     @Override
@@ -190,7 +214,7 @@ public class SweetToothManager {
 				@Override
 				public void run() {
 					for (SweetToothListener listener : listeners) {
-						listener.discoveredDevice(device, rssi, scanRecord);
+						listener.onDiscoveredDevice(device, rssi, scanRecord);
 					}
 				}
 			};
