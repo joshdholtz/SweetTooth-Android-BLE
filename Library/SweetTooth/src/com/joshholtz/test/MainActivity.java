@@ -9,8 +9,10 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.joshholtz.ArrayUtils;
+import com.joshholtz.BLEAdvertisementData;
 import com.joshholtz.R;
 import com.joshholtz.SweetToothManager;
+import com.joshholtz.SweetToothManager.SweetToothCharacteristicListener;
 import com.joshholtz.SweetToothManager.SweetToothListener;
 
 import android.os.Bundle;
@@ -19,8 +21,13 @@ import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
@@ -47,17 +54,45 @@ public class MainActivity extends Activity implements SweetToothListener {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				if (isChecked) {
-//					UUID uuid = UUID.fromString("beb54859-b4b6-4aff-bc7f-a12e8a3cd858");
-//					UUID uuid = UUID.fromString("1800");
-//					Log.d(SweetToothManager.LOG_TAG, "UUID - " + uuid);
-					SweetToothManager.getInstance().startOnInterval(1000, 250);
-//					SweetToothManager.getInstance().startOnInterval(new UUID[]{ uuid }, 1000, 250);
+//					SweetToothManager.getInstance().start();
+					SweetToothManager.getInstance().startOnInterval(2000, 250);
 				} else {
 					SweetToothManager.getInstance().stop();
 				}
 			}        	
         });
         lstView = (ListView) this.findViewById(R.id.list_view);
+        lstView.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+				BluetoothDeviceWrapper wrapper = devices.get(arg2);
+				
+				SweetToothManager.getInstance().readCharacteristics(wrapper.device,
+						UUID.fromString("beb54859-b4b6-4aff-bc7f-a12e8a3cd858"),
+						new UUID[]{},
+						10000L,
+						new SweetToothCharacteristicListener() {
+
+							@Override
+							public void onReadCharacteristics( BluetoothGatt gatt, BluetoothGattService service, List<BluetoothGattCharacteristic> characteristics) {
+								Log.d(SweetToothManager.LOG_TAG, "onReadCharacteristics");
+								for (BluetoothGattCharacteristic characteristic : characteristics) {
+									Toast.makeText(getApplicationContext(), "Characteristic read - " + characteristic.getUuid() + " = " + characteristic.getStringValue(0), Toast.LENGTH_SHORT).show();
+								}
+							}
+
+							@Override
+							public void onReadCharacteristicsFailure() {
+								Log.d(SweetToothManager.LOG_TAG, "onReadCharacteristicsFailure");
+								Toast.makeText(getApplicationContext(), "Failed to read characteristics", Toast.LENGTH_SHORT).show();
+							}
+					
+				});
+				
+			}
+        	
+        });
         
         // Initializing list
         devices = new ArrayList<BluetoothDeviceWrapper>();
@@ -108,6 +143,7 @@ public class MainActivity extends Activity implements SweetToothListener {
 		// Adds devices to list if it isn't already discovered
 		BluetoothDeviceWrapper wrapper = new BluetoothDeviceWrapper(device, System.currentTimeMillis());
 		if (!devices.contains(wrapper)) {
+			
 			if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd858", scanRecord)) {
 				devices.add(wrapper);
 				lstViewAdapter.notifyDataSetChanged();

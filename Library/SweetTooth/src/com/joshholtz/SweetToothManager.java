@@ -1,14 +1,23 @@
 package com.joshholtz;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import android.app.Activity;
 import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -42,6 +51,16 @@ public class SweetToothManager {
 		 * @param scanRecord
 		 */
 		public void onDiscoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord);
+	}
+	
+	
+	public interface SweetToothServiceListener {
+		public void onReadServices(BluetoothGatt gatt, List<BluetoothGattService> services);
+	}
+
+	public interface SweetToothCharacteristicListener {
+		public void onReadCharacteristics(BluetoothGatt gatt, BluetoothGattService service, List<BluetoothGattCharacteristic> characteristics);
+		public void onReadCharacteristicsFailure();
 	}
 	
 	/**
@@ -226,40 +245,60 @@ public class SweetToothManager {
 	 */
 	public static boolean scanRecordHasService(String serviceUUID, byte[] scanRecord) {
 
-	    // UUID we want to filter by (without hyphens)
-		serviceUUID = serviceUUID.toUpperCase();
-
-	    // The offset in the scan record. In my case the offset was 13; it will probably be different for you
-	    final int serviceOffset = 15; 
-
-	    try{
-
-	        // Get a 16-byte array of what may or may not be the service we're filtering for
-	    	byte[] service = scanRecord;
-//	        byte[] service = ArrayUtils.subarray(scanRecord, serviceOffset, serviceOffset + 16);
-
-	        // The bytes are probably in reverse order, so we need to fix that
-	        ArrayUtils.reverse(service);
-
-	        // Get the hex string
-	        String discoveredServiceID = bytesToHex(service);
-	        Log.d(LOG_TAG, "Scan Record - " + discoveredServiceID);
-
-	        // Compare against our service
-	        return discoveredServiceID.contains(serviceUUID);
-
-	    } catch (Exception e){
-	        return false;
-	    }
+		BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
+		
+		return Arrays.asList(blueTipzData.get128BitServiceUUIDs()).contains(serviceUUID.toUpperCase());
+		
+//	    // UUID we want to filter by (without hyphens)
+//		serviceUUID = serviceUUID.toUpperCase();
+//
+//	    // The offset in the scan record. In my case the offset was 13; it will probably be different for you
+//	    final int serviceOffset = 15; 
+//
+//	    try{
+//
+//	        // Get a 16-byte array of what may or may not be the service we're filtering for
+////	    	byte[] service = scanRecord;
+////	        byte[] service = ArrayUtils.subarray(scanRecord, serviceOffset, serviceOffset + 16);
+//
+//	        // The bytes are probably in reverse order, so we need to fix that
+////	        ArrayUtils.reverse(service);
+//
+//	        // Get the hex string
+//	        String discoveredServiceID = bytesToHex(scanRecord);
+//	       
+//	        Log.d(LOG_TAG, "Scan bytes - " + Arrays.toString(scanRecord));
+//	        Log.d(LOG_TAG, "Scan Record - " + discoveredServiceID);
+//	        Log.d(LOG_TAG, "Scan Record String - " + getStringValue(scanRecord, 0));
+//
+//	        // Compare against our service
+//	        return true;
+////	        return discoveredServiceID.contains(serviceUUID);
+//
+//	    } catch (Exception e){
+//	        return false;
+//	    }
 
 	}
 	
 	private static String bytesToHex(byte[] bytes) {
 		StringBuilder sb = new StringBuilder();
 	    for (byte b : bytes) {
-	        sb.append(String.format("%02X", b));
+	        sb.append(String.format("%02X ", b));
 	    }
 	    return sb.toString();
+	}
+	
+	public static String getStringValue(byte[] value, int position) {
+	        if (value == null)
+	                return null;
+	        if (position > value.length)
+	                return null;
+	        byte[] arrayOfByte = new byte[value.length - position];
+	        for (int i = 0; i != value.length - position; i++) {
+	                arrayOfByte[i] = value[(position + i)];
+	        }
+	        return new String(arrayOfByte);
 	}
 	
 	private void doOnInterval(final UUID[] uuids, final long scanPeriodOn, final long scanPeriodOff) {
@@ -288,6 +327,99 @@ public class SweetToothManager {
                 }, scanPeriodOff);
             }
         }, scanPeriodOn);
+		
+	}
+	
+	public void readCharacteristics(BluetoothDevice device, final UUID serviceUUID, UUID[] characteristicUUIDs, final long timeout, final SweetToothCharacteristicListener listener) {
+		device.connectGatt(context, true, new BluetoothGattCallback() {
+			
+			Timer timer;
+			boolean timerCalled;
+			
+			BluetoothGatt gatt;
+			BluetoothGattService service;
+			List<BluetoothGattCharacteristic> characteristicsRead = new ArrayList<BluetoothGattCharacteristic>();
+			
+			LinkedList<BluetoothGattCharacteristic> readQueue = new LinkedList<BluetoothGattCharacteristic>();
+			
+			{
+				timer = new Timer();
+				timer.schedule(new TimerTask() {
+
+					@Override
+					public void run() {
+						timerCalled = true;
+						new Handler(context.getMainLooper()).post(new Runnable() {
+
+							@Override
+							public void run() {
+								listener.onReadCharacteristicsFailure();
+							}
+							
+						});
+					}
+					
+				}, timeout);
+			}
+			
+			@Override
+	        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+	            if (newState == BluetoothProfile.STATE_CONNECTED) {
+	            	this.gatt = gatt;
+	                Log.i(LOG_TAG, "Connected to GATT server.");
+	                Log.i(LOG_TAG, "Attempting to start service discovery:" +
+	                        gatt.discoverServices()
+	                        );
+
+	            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+	                Log.i(LOG_TAG, "Disconnected from GATT server.");
+	            }
+	        }
+			
+			public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+				Log.i(LOG_TAG, "Services discovered");
+				for (BluetoothGattService service : gatt.getServices()) {
+					Log.d(LOG_TAG ,"Service discovered - " + service.getUuid());
+					
+					if (service.getUuid().equals(serviceUUID)) {
+						this.service = service;
+						for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+							Log.d(LOG_TAG ,"\tCharacteristic discovered - " + characteristic.getUuid());
+							readQueue.add(characteristic);
+						}
+						readNext();
+					}
+				}
+	        }
+			
+			@Override
+			public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+				Log.d(LOG_TAG ,"Read " + characteristic.getUuid() + " - " + characteristic.getStringValue(0));
+				characteristicsRead.add(characteristic);
+				readNext();
+			}
+			
+			private void readNext() {
+				if (readQueue.peekLast() != null) {
+					Log.i(LOG_TAG, "Trying to read");
+					gatt.readCharacteristic(readQueue.pollLast());
+				} else {
+					Log.i(LOG_TAG, "Done reading");
+					if (!timerCalled) {
+						timer.cancel();
+						new Handler(context.getMainLooper()).post(new Runnable() {
+
+							@Override
+							public void run() {
+								listener.onReadCharacteristics(gatt, service, characteristicsRead);
+							}
+							
+						});
+					}
+				}
+			}
+			
+		});
 		
 	}
 	
