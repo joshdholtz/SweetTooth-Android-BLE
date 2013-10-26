@@ -20,8 +20,14 @@ public class SweetToothManager implements ISweetToothManager {
 			Log.d(LOG_TAG, "Using NativeSweetToothManager");
 			duck = NativeSweetToothManager.getInstance();
 		} else if (android.os.Build.VERSION.SDK_INT == 17 && android.os.Build.MANUFACTURER.toLowerCase().contains("samsung")) {
-			Log.d(LOG_TAG, "Using SamsungSweetToothManager");
-			duck = SamsungSweetToothManager.getInstance();
+			try {
+				Class.forName("com.samsung.android.sdk.bt.gatt.BluetoothGatt");
+				
+				Log.d(LOG_TAG, "Using SamsungSweetToothManager");
+				duck = SamsungSweetToothManager.getInstance();
+			} catch (Exception e) {
+				Log.d(LOG_TAG, "Using NoneSweetToothManager");
+			}
 		} else {
 			Log.d(LOG_TAG, "Using NoneSweetToothManager");
 		}
