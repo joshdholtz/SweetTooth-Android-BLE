@@ -23,6 +23,7 @@ import com.samsung.android.sdk.bt.gatt.BluetoothGattCallback;
 import com.samsung.android.sdk.bt.gatt.BluetoothGattCharacteristic;
 import com.samsung.android.sdk.bt.gatt.BluetoothGattDescriptor;
 import com.samsung.android.sdk.bt.gatt.BluetoothGattServer;
+import com.samsung.android.sdk.bt.gatt.BluetoothGattService;
 
 public class SamsungSweetToothManager implements ISweetToothManager {
 
@@ -253,7 +254,7 @@ public class SamsungSweetToothManager implements ISweetToothManager {
 
         @Override
         public void onServicesDiscovered(BluetoothDevice device, int status) {
-            Log.d(LOG_TAG, "onServicesDiscovered()");
+            Log.d(LOG_TAG, "***************************** onServicesDiscovered()");
 //            Message msg = Message.obtain(mActivityHandler, PXP_READY_MSG);
 //            msg.sendToTarget();
 //            DummyReadForSecLevelCheck(device);

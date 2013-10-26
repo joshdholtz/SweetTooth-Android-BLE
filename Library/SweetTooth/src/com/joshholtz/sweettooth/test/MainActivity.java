@@ -94,6 +94,7 @@ public class MainActivity extends Activity implements SweetToothListener {
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 				BluetoothDeviceWrapper wrapper = devices.get(arg2);
 				
+				
 				SweetToothManager.getInstance().readCharacteristics(wrapper.device,
 						UUID.fromString("beb54859-b4b6-4aff-bc7f-a12e8a3cd858"),
 						new UUID[]{},
