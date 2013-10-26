@@ -1,9 +1,9 @@
-package com.joshholtz.test;
+package com.joshholtz.sweettooth.test;
 
 import java.util.List;
 
-import com.joshholtz.R;
-import com.joshholtz.test.MainActivity.BluetoothDeviceWrapper;
+import com.joshholtz.sweettooth.test.MainActivity.BluetoothDeviceWrapper;
+import com.joshholtz.sweetttooth.R;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;

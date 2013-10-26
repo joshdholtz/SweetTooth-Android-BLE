@@ -1,4 +1,4 @@
-package com.joshholtz;
+package com.joshholtz.sweettooth;
 
 import java.util.Arrays;
 import java.util.HashMap;

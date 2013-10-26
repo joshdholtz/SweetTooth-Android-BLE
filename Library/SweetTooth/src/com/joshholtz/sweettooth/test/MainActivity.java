@@ -1,4 +1,4 @@
-package com.joshholtz.test;
+package com.joshholtz.sweettooth.test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +8,13 @@ import java.util.TimerTask;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.joshholtz.ArrayUtils;
-import com.joshholtz.BLEAdvertisementData;
-import com.joshholtz.R;
-import com.joshholtz.SweetToothManager;
-import com.joshholtz.SweetToothManager.SweetToothCharacteristicListener;
-import com.joshholtz.SweetToothManager.SweetToothListener;
+import com.joshholtz.sweettooth.ArrayUtils;
+import com.joshholtz.sweettooth.BLEAdvertisementData;
+import com.joshholtz.sweettooth.SweetToothCharacteristicListener;
+import com.joshholtz.sweettooth.SweetToothListener;
+import com.joshholtz.sweettooth.manager.SamsungSweetToothManager;
+import com.joshholtz.sweettooth.manager.SweetToothManager;
+import com.joshholtz.sweetttooth.R;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -43,6 +44,8 @@ public class MainActivity extends Activity implements SweetToothListener {
 	
 	List<BluetoothDeviceWrapper> devices;
 	
+	Timer timer;
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +59,30 @@ public class MainActivity extends Activity implements SweetToothListener {
 				if (isChecked) {
 //					SweetToothManager.getInstance().start();
 					SweetToothManager.getInstance().startOnInterval(2000, 250);
+					
+					SweetToothManager manager = SweetToothManager.getInstance();
+					if (manager.getManager() instanceof SamsungSweetToothManager) {
+						Log.d(SweetToothManager.LOG_TAG, "Going to create timer");
+						if (timer == null) {
+							timer = new Timer();
+							timer.scheduleAtFixedRate(new TimerTask() {
+								@Override
+								public void run() {
+									MainActivity.this.runOnUiThread(new Runnable() {
+										@Override
+										public void run() {
+											checkToRemoveDevices();
+										}
+									});
+								}
+							}, 6000, 6000);
+						}
+					}
 				} else {
+					if (timer != null) {
+						timer.cancel();
+					}
+					timer = null;
 					SweetToothManager.getInstance().stop();
 				}
 			}        	
@@ -94,16 +120,17 @@ public class MainActivity extends Activity implements SweetToothListener {
         	
         });
         
+        
         // Initializing list
         devices = new ArrayList<BluetoothDeviceWrapper>();
         lstViewAdapter = new DevicesAdapter(this, devices);
         lstView.setAdapter(lstViewAdapter);
         
         // Initializing SweetToothManager
-        SweetToothManager.initInstance(getApplication());
+        SweetToothManager.getInstance().initInstance(getApplication());
         SweetToothManager.getInstance().addListener(this);
 
-        Toast.makeText(this, "BLE Supported - " + SweetToothManager.getInstance().isBLESupported(), Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "BLE Supported - " + SweetToothManager.getInstance().isBLESupported(), Toast.LENGTH_SHORT).show();
     }
 
 
@@ -127,29 +154,36 @@ public class MainActivity extends Activity implements SweetToothListener {
 	public void onScanningIntervalStateChange(boolean scanning) {
     	// Removes device from list if not seen for 5 seconds
 		if (!scanning) {
-			List<BluetoothDeviceWrapper> devicesToRemove = new ArrayList<BluetoothDeviceWrapper>();
-			for (BluetoothDeviceWrapper wrapper : devices) {
-				if (System.currentTimeMillis() - wrapper.lastSeen > 5000) {
-					devicesToRemove.add(wrapper);
-				}
-			}
-			devices.removeAll(devicesToRemove);
-			lstViewAdapter.notifyDataSetChanged();
+			checkToRemoveDevices();
 		}
 	}
     
 	@Override
 	public void onDiscoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord) {
 		// Adds devices to list if it isn't already discovered
+		Log.d(SweetToothManager.LOG_TAG, "onDiscovered");
 		BluetoothDeviceWrapper wrapper = new BluetoothDeviceWrapper(device, System.currentTimeMillis());
-		if (!devices.contains(wrapper)) {
-			
-			if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd858", scanRecord)) {
-				devices.add(wrapper);
-				lstViewAdapter.notifyDataSetChanged();
-			}
+		if (devices.contains(wrapper)) {
+			devices.remove(wrapper);
+		}
+		
+		Log.d(SweetToothManager.LOG_TAG, "adding device - " + devices.size());
+		if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd858", scanRecord)) {
+			devices.add(wrapper);
+			lstViewAdapter.notifyDataSetChanged();
 		}
 
+	}
+	
+	private void checkToRemoveDevices() {
+		List<BluetoothDeviceWrapper> devicesToRemove = new ArrayList<BluetoothDeviceWrapper>();
+		for (BluetoothDeviceWrapper wrapper : devices) {
+			if (System.currentTimeMillis() - wrapper.lastSeen > 5000) {
+				devicesToRemove.add(wrapper);
+			}
+		}
+		devices.removeAll(devicesToRemove);
+		lstViewAdapter.notifyDataSetChanged();
 	}
 	
 	/**

@@ -1,4 +1,4 @@
-package com.joshholtz;
+package com.joshholtz.sweettooth.manager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+
+import com.joshholtz.sweettooth.SweetToothCharacteristicListener;
+import com.joshholtz.sweettooth.SweetToothListener;
 
 import android.app.Activity;
 import android.app.Application;
@@ -24,61 +27,28 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.util.Log;
 
-public class SweetToothManager {
+public class NativeSweetToothManager implements ISweetToothManager {
 	
-	public final static String LOG_TAG = "SweetTooth";
 	public final static int REQUEST_BLE_ENABLE = 3011989;
-
-	public interface SweetToothListener {
-		
-		/**
-		 * Gets called when scanning starts or stops.
-		 * Called from start() and stop()
-		 * @param scanning
-		 */
-		public void onScanningStateChange(boolean scanning);
-		
-		/**
-		 * Gets called when startOnInterval() starts and stops scanning.
-		 * @param scanning
-		 */
-		public void onScanningIntervalStateChange(boolean scanning);
-		
-		/**
-		 * Gets called when a device is discovered.
-		 * @param device
-		 * @param rssi
-		 * @param scanRecord
-		 */
-		public void onDiscoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord);
-	}
-	
-	
-	public interface SweetToothServiceListener {
-		public void onReadServices(BluetoothGatt gatt, List<BluetoothGattService> services);
-	}
-
-	public interface SweetToothCharacteristicListener {
-		public void onReadCharacteristics(BluetoothGatt gatt, BluetoothGattService service, List<BluetoothGattCharacteristic> characteristics);
-		public void onReadCharacteristicsFailure();
-	}
 	
 	/**
 	 * Singletony stuff
 	 */
-	private SweetToothManager() {}
+	private NativeSweetToothManager() {
+		
+	}
 
 	private static class LazyHolder {
-		private static final SweetToothManager INSTANCE = new SweetToothManager();
+		private static final NativeSweetToothManager INSTANCE = new NativeSweetToothManager();
 	}
 
-	public static SweetToothManager initInstance(Application application) {
-		getInstance().context = application.getApplicationContext();
-		getInstance().initBluetoothManager();
-		return getInstance();
+	@Override
+	public void initInstance(Application application) {
+		context = application.getApplicationContext();
+		initBluetoothManager();
 	}
 	
-	public static SweetToothManager getInstance() {
+	public static NativeSweetToothManager getInstance() {
 		return LazyHolder.INSTANCE;
 	}
 	
@@ -103,12 +73,14 @@ public class SweetToothManager {
 		}
 	}
 	
+	@Override
 	public void addListener(SweetToothListener listener) {
 		if (!listeners.contains(listener)) {
 			listeners.add(listener);
 		}
 	}
 	
+	@Override
 	public void removeListener(SweetToothListener listener) {
 		listeners.remove(listener);
 	}
@@ -174,6 +146,7 @@ public class SweetToothManager {
 	/**
 	 * Starts scan
 	 */
+	@Override
 	public void start() {
 		start(new UUID[]{});
 	}
@@ -183,6 +156,7 @@ public class SweetToothManager {
 	 * 
 	 * @param uuids
 	 */
+	@Override
 	public void start(UUID[] uuids) {
 		Log.d(LOG_TAG, "start()");
         scanning = true;
@@ -196,6 +170,7 @@ public class SweetToothManager {
 	/**
 	 * Stops scan
 	 */
+	@Override
 	public void stop() {
 		Log.d(LOG_TAG, "stop()");
 		handler.removeCallbacks(null);
@@ -213,6 +188,7 @@ public class SweetToothManager {
 	 * @param scanPeriodOn
 	 * @param scanPeriodOff
 	 */
+	@Override
 	public void startOnInterval(long scanPeriodOn, long scanPeriodOff) {
 		startOnInterval(new UUID[]{}, scanPeriodOn, scanPeriodOff);
 	}
@@ -223,6 +199,7 @@ public class SweetToothManager {
 	 * @param scanPeriodOn
 	 * @param scanPeriodOff
 	 */
+	@Override
 	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff) {
 		scanning = true;
 	
@@ -231,21 +208,6 @@ public class SweetToothManager {
 		}
 		
 		doOnInterval(uuids, scanPeriodOn, scanPeriodOff);
-	}
-	
-	/**
-	 * Helper method to check advertising data for a service ID.
-	 * Addresses Android 4.3 issue when trying to scan for a specific service
-	 * 
-	 * Example: beb54859b4b64affbc7fa12e8a3cd858
-	 * 
-	 * @param serviceUUID
-	 * @param scanRecord 
-	 * @return boolean
-	 */
-	public static boolean scanRecordHasService(String serviceUUID, byte[] scanRecord) {
-		BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
-		return Arrays.asList(blueTipzData.get128BitServiceUUIDs()).contains(serviceUUID.toUpperCase());
 	}
 	
 	private void doOnInterval(final UUID[] uuids, final long scanPeriodOn, final long scanPeriodOff) {
@@ -277,6 +239,7 @@ public class SweetToothManager {
 		
 	}
 	
+	@Override
 	public void readCharacteristics(BluetoothDevice device, final UUID serviceUUID, UUID[] characteristicUUIDs, final long timeout, final SweetToothCharacteristicListener listener) {
 		device.connectGatt(context, true, new BluetoothGattCallback() {
 			
