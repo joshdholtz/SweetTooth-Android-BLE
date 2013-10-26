@@ -41,3 +41,33 @@ public class MainActivity extends Activity implements SweetToothListener {
 
 
 ````
+
+## WTF is with the scanRecord?
+The scan record contains advertisement data but the simple byte array does not provide easy access to the information.
+
+<b>BLEAdvertisementData</b> class parses the scanRecord and provides helpers for getting all of the data out.
+If the helpers aren't enough, the <b>BLEAdvertisementData</b> class extends HashMap<String, String[] array> so you can grab any data you want out of it.
+
+````java
+
+	@Override
+	public void discoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord) {
+		BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
+		
+		Log.d("SweetTooth", "Flags - " + blueTipzData.getFlags() );
+		
+		Log.d("SweetTooth", "16 bit UUIDS - " + Arrays.toString( blueTipzData.get16BitServiceUUIDs() ) );
+		Log.d("SweetTooth", "More 16 bit UUIDS - " + Arrays.toString( blueTipzData.getMore16BitServiceUUIDs() ) );
+		
+		Log.d("SweetTooth", "32 bit UUIDS - " + Arrays.toString( blueTipzData.get32BitServiceUUIDs() ) );
+		Log.d("SweetTooth", "More 32 bit UUIDS - " + Arrays.toString( blueTipzData.getMore32BitServiceUUIDs() ) );
+		
+		Log.d("SweetTooth", "128 bit UUIDS - " + Arrays.toString( blueTipzData.get128BitServiceUUIDs() ) );
+		Log.d("SweetTooth", "More 128 bit UUIDS - " + Arrays.toString( blueTipzData.getMore128BitServiceUUIDs() ) );
+
+		Log.d("SweetTooth", "Local name complete - " + blueTipzData.getLocalNameComplete() );
+		Log.d("SweetTooth", "Local name shortened - " + blueTipzData.getLocalNameShortened() );
+	}
+
+
+````
