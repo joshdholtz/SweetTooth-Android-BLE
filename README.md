@@ -10,32 +10,43 @@ A simplistic, sugarcoated, Android BLE Wrapper
     - You know, it starts scanning for devices
 
 ````java
+	
+	// Init instance and add listener
+	SweetToothManager.getInstance().initInstance(getApplication());
+	SweetToothManager.getInstance().addListener(new SweetToothListener() {
+
+		@Override
+		public void onDiscoveredDevice(BluetoothDevice arg0, int arg1, byte[] arg2) {
+			Log.d("SweetTooth", "We got device - " + arg0.getName());
+		}
+
+		@Override
+		public void onScanningIntervalStateChange(boolean arg0) {
+			
+		}
+
+		@Override
+		public void onScanningStateChange(boolean arg0) {
+			
+		}
+		
+	});
+
+	// Starts scanning - this should probably start on a button press
+	SweetToothManager.getInstance().start();
+
+````
+
+## Scans on interval - a little bit of hacks
+Not sure if needed yet
+
+````java
 
 public class MainActivity extends Activity implements SweetToothListener {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-            
-        // Initializes SweetToothManager
-        SweetToothManager.initInstance(getApplication());
-        
-        // Adds SweetToothListener
-        SweetToothManager.getInstance().addListener(this);
-        
-        // Starts scanning on an interval - turns on scan for 5 seconds, turns off scanning for 0.5 seconds
-        // This is used (in this case) since Android as no way to turn on multiple discoveries of an advertising device
-        SweetToothManager.getInstance().startOnInterval(5000, 500);
-        
-        // Shows toast if BLE is supported
-        Toast.makeText(this, "BLE Supported - " + SweetToothManager.getInstance().isBLESupported(), Toast.LENGTH_SHORT).show();
-    }
-
-	@Override
-	public void discoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord) {
-		Log.d(SweetToothManager.LOG_TAG, "Found device in listener - " + device.toString());
-	}
+	// Starts scanning on an interval - turns on scan for 5 seconds, turns off scanning for 0.5 seconds
+	// This is used (in this case) since Android as no way to turn on multiple discoveries of an advertising device
+	SweetToothManager.getInstance().startOnInterval(5000, 500);
     
 }
 
