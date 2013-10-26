@@ -244,61 +244,8 @@ public class SweetToothManager {
 	 * @return boolean
 	 */
 	public static boolean scanRecordHasService(String serviceUUID, byte[] scanRecord) {
-
 		BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
-		
 		return Arrays.asList(blueTipzData.get128BitServiceUUIDs()).contains(serviceUUID.toUpperCase());
-		
-//	    // UUID we want to filter by (without hyphens)
-//		serviceUUID = serviceUUID.toUpperCase();
-//
-//	    // The offset in the scan record. In my case the offset was 13; it will probably be different for you
-//	    final int serviceOffset = 15; 
-//
-//	    try{
-//
-//	        // Get a 16-byte array of what may or may not be the service we're filtering for
-////	    	byte[] service = scanRecord;
-////	        byte[] service = ArrayUtils.subarray(scanRecord, serviceOffset, serviceOffset + 16);
-//
-//	        // The bytes are probably in reverse order, so we need to fix that
-////	        ArrayUtils.reverse(service);
-//
-//	        // Get the hex string
-//	        String discoveredServiceID = bytesToHex(scanRecord);
-//	       
-//	        Log.d(LOG_TAG, "Scan bytes - " + Arrays.toString(scanRecord));
-//	        Log.d(LOG_TAG, "Scan Record - " + discoveredServiceID);
-//	        Log.d(LOG_TAG, "Scan Record String - " + getStringValue(scanRecord, 0));
-//
-//	        // Compare against our service
-//	        return true;
-////	        return discoveredServiceID.contains(serviceUUID);
-//
-//	    } catch (Exception e){
-//	        return false;
-//	    }
-
-	}
-	
-	private static String bytesToHex(byte[] bytes) {
-		StringBuilder sb = new StringBuilder();
-	    for (byte b : bytes) {
-	        sb.append(String.format("%02X ", b));
-	    }
-	    return sb.toString();
-	}
-	
-	public static String getStringValue(byte[] value, int position) {
-	        if (value == null)
-	                return null;
-	        if (position > value.length)
-	                return null;
-	        byte[] arrayOfByte = new byte[value.length - position];
-	        for (int i = 0; i != value.length - position; i++) {
-	                arrayOfByte[i] = value[(position + i)];
-	        }
-	        return new String(arrayOfByte);
 	}
 	
 	private void doOnInterval(final UUID[] uuids, final long scanPeriodOn, final long scanPeriodOff) {
