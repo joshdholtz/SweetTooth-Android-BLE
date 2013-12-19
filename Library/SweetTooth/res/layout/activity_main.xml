@@ -11,6 +11,14 @@
     	android:textOff="Not scanning"
         />
     
+    <TextView
+	    android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:padding="10dp"
+    	android:text="The list below will show active BLE (Bluetooth Low Energy) devices around you.\n\nA device that turns inactive or is no longer near you will clear in 6(ish) seconds"
+        android:textSize="14sp"
+    	/>
+    
     <ListView
         android:id="@+id/list_view"
         android:layout_width="fill_parent"

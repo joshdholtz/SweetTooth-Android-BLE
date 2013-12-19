@@ -18,7 +18,7 @@ public class SweetToothManager implements ISweetToothManager {
 	private SweetToothManager() {
 		if (android.os.Build.VERSION.SDK_INT >= 18) {
 			Log.d(LOG_TAG, "Using NativeSweetToothManager");
-			duck = NativeSweetToothManager.getInstance();
+			duck = NativeSweetToothManagerV2.getInstance();
 		} else if (android.os.Build.VERSION.SDK_INT == 17 && android.os.Build.MANUFACTURER.toLowerCase().contains("samsung")) {
 			try {
 				Class.forName("com.samsung.android.sdk.bt.gatt.BluetoothGatt");
@@ -28,10 +28,22 @@ public class SweetToothManager implements ISweetToothManager {
 			} catch (Exception e) {
 				Log.d(LOG_TAG, "Using NoneSweetToothManager");
 			}
+		} else if (android.os.Build.VERSION.SDK_INT == 17 && android.os.Build.MANUFACTURER.toLowerCase().contains("motorola")) {
+			try {
+				Class.forName("com.motorola.bluetoothle.BluetoothGatt");
+				
+				Log.d(LOG_TAG, "Using MotorolaSweetToothManager");
+			} catch (Exception e) {
+				Log.d(LOG_TAG, "Using NoneSweetToothManager");
+			}
 		} else {
 			Log.d(LOG_TAG, "Using NoneSweetToothManager");
 		}
 	};
+	
+	public void setManagerInstance(ISweetToothManager manager) {
+		duck = manager;
+	}
 	
 	public ISweetToothManager getManager() {
 		return duck;
@@ -56,6 +68,8 @@ public class SweetToothManager implements ISweetToothManager {
 	 * @return boolean
 	 */
 	public static boolean scanRecordHasService(String serviceUUID, byte[] scanRecord) {
+		serviceUUID = serviceUUID.replaceAll("-", "");
+		
 		BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
 		return Arrays.asList(blueTipzData.get128BitServiceUUIDs()).contains(serviceUUID.toUpperCase());
 	}
@@ -64,6 +78,18 @@ public class SweetToothManager implements ISweetToothManager {
 	public void initInstance(Application application) {
 		if (duck == null) return;
 		duck.initInstance(application);
+	}
+	
+	@Override
+	public boolean isBLESupported() {
+		if (duck == null) return false;
+		return duck.isBLESupported();
+	}
+
+	@Override
+	public boolean isBLEEnabled() {
+		if (duck == null) return false;
+		return duck.isBLEEnabled();
 	}
 
 	@Override
@@ -106,6 +132,12 @@ public class SweetToothManager implements ISweetToothManager {
 	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff) {
 		if (duck == null) return;
 		duck.startOnInterval(uuids, scanPeriodOn, scanPeriodOff);
+	}
+	
+	@Override
+	public boolean isScanning() {
+		if (duck == null) return false;
+		return duck.isScanning();
 	}
 
 	@Override

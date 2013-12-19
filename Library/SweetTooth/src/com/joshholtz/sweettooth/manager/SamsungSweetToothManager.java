@@ -73,6 +73,23 @@ public class SamsungSweetToothManager implements ISweetToothManager {
 	        }
 		}
 	}
+	
+	/**
+	 * Returns true if BLE is supported on this device.
+	 * @param context
+	 * @return
+	 */
+	public boolean isBLESupported() {
+		return bluetoothAdapter != null;
+	}
+	
+	/**
+	 * Returns true if BLE is enabled.
+	 * @return
+	 */
+	public boolean isBLEEnabled() {
+		return bluetoothAdapter != null && bluetoothAdapter.isEnabled();
+	}
 
 	@Override
 	public void addListener(SweetToothListener listener) {
@@ -150,6 +167,11 @@ public class SamsungSweetToothManager implements ISweetToothManager {
 	@Override
 	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff) {
 		start(uuids);
+	}
+	
+	@Override
+	public boolean isScanning() {
+		return this.scanning;
 	}
 
 	@Override
