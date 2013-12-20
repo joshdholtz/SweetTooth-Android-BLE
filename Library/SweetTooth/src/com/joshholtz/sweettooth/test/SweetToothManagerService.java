@@ -3,6 +3,8 @@ package com.joshholtz.sweettooth.test;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.joshholtz.sweettooth.SweetToothListener;
 import com.joshholtz.sweettooth.manager.SweetToothManager;
@@ -33,6 +35,7 @@ public class SweetToothManagerService extends Service {
 	
 	public static String BROADCAST_START = "com.joshholtz.sweettooth.SERVICE_SCAN_START";
 	public static String BROADCAST_STOP = "com.joshholtz.sweettooth.SERVICE_SCAN_STOP";
+	public static String BROADCAST_PAUSE = "com.joshholtz.sweettooth.SERVICE_SCAN_PAUSE";
 	public static String BROADCAST_SCAN_DISCOVERED = "com.joshholtz.sweettooth.SERVICE_SCAN_DISCOVERED";
 	public static String REQUEST_BROADCAST_STATE = "com.joshholtz.sweettooth.REQUEST_BROADCAST_SCAN_STATE";
 	public static String BROADCAST_STATE = "com.joshholtz.sweettooth.SCAN_STATE";
@@ -42,6 +45,7 @@ public class SweetToothManagerService extends Service {
 	
 	protected SweetToothManager sweetToothManager;
 	protected boolean isScanning;
+	protected Timer intervalTimer;
 	
 	private BluetoothAdapter.LeScanCallback leScanCallback;
 	private SweetToothListener sweetToothListener;
@@ -61,11 +65,13 @@ public class SweetToothManagerService extends Service {
 		
 		this.registerReceiver(startReceiver, new IntentFilter(BROADCAST_START));
 		this.registerReceiver(stopReceiver, new IntentFilter(BROADCAST_STOP));
+		this.registerReceiver(pauseReceiver, new IntentFilter(BROADCAST_PAUSE));
 		this.registerReceiver(requestStateReceiver, new IntentFilter(REQUEST_BROADCAST_STATE));
 		
 		leScanCallback = new BluetoothAdapter.LeScanCallback() {
 			@Override
 			public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+				Log.d(SweetToothManager.LOG_TAG, "Found onLeScan - " + device.getAddress());
 				handleScan(device, rssi, scanRecord);
 			}
 		};
@@ -83,12 +89,13 @@ public class SweetToothManagerService extends Service {
 
 			@Override
 			public void onDiscoveredDevice(BluetoothDevice device, int rssi, byte[] scanRecord) {
+				Log.d(SweetToothManager.LOG_TAG, "Found onDiscoveredDevice - " + device.getAddress());
 				handleScan(device, rssi, scanRecord);
 			}
 			
 		};
 		
-		if (android.os.Build.VERSION.SDK_INT < 18) {
+		if (useSweetTooth()) {
 			sweetToothManager = new SweetToothManager();
 			sweetToothManager.initInstance(getApplication());
 			sweetToothManager.addListener(sweetToothListener);
@@ -124,22 +131,61 @@ public class SweetToothManagerService extends Service {
 		context.sendBroadcast(new Intent(BROADCAST_STOP));
 	}
 	
+	private static void pauseScan(Context context, boolean pause) {
+		Intent intent = new Intent(BROADCAST_PAUSE);
+		intent.putExtra("pause", pause);
+		context.sendBroadcast(intent);
+	}
+	
+	public static void requestState(Context context) {
+		context.sendBroadcast(new Intent(REQUEST_BROADCAST_STATE));
+	}
+	
+	protected boolean useSweetTooth() {
+		return android.os.Build.VERSION.SDK_INT < 18;
+	}
+	
 	protected void startScan() {
-		if (android.os.Build.VERSION.SDK_INT < 18) {
+		if (useSweetTooth()) {
+			Log.d(SweetToothManager.LOG_TAG, "startScan() - sweetToothManager");
 			sweetToothManager.startOnInterval(2000, 2000);
 		} else {
+			Log.d(SweetToothManager.LOG_TAG, "startScan() - bluetoothAdapter");
 			this.onScanningStateChange(true);
-			bluetoothAdapter.startLeScan(leScanCallback);
+			
+			intervalTimer = new Timer();
+			intervalTimer.scheduleAtFixedRate(new TimerTask() {
+				
+				private boolean isPaused = true;
+				
+				@Override
+				public void run() {
+					isPaused = !isPaused;
+					pauseScan(SweetToothManagerService.this.getApplicationContext(), isPaused);
+				}
+				
+			}, 10, 2000);
 		}
 	}
 	
 	protected void stopScan() {
-		if (android.os.Build.VERSION.SDK_INT < 18) {
+		if (useSweetTooth()) {
+			Log.d(SweetToothManager.LOG_TAG, "stopScan() - sweetToothManager");
 			sweetToothManager.stop();
 		} else {
+			Log.d(SweetToothManager.LOG_TAG, "stopScan() - bluetoothAdapter");
 			this.onScanningStateChange(false);
+			intervalTimer.cancel();
 			bluetoothAdapter.stopLeScan(leScanCallback);
 		}
+	}
+	
+	protected void pauseScan() {
+		bluetoothAdapter.stopLeScan(leScanCallback);
+	}
+	
+	protected void unpauseScan() {
+		bluetoothAdapter.startLeScan(leScanCallback);
 	}
 	
 	protected void onScanningStateChange(boolean scanning) {
@@ -161,6 +207,19 @@ public class SweetToothManagerService extends Service {
 		}
 	};
 	
+	BroadcastReceiver pauseReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getBooleanExtra("pause", false)) {
+				Log.d(SweetToothManager.LOG_TAG, "PAUSING SCAN");
+				pauseScan();
+			} else {
+				Log.d(SweetToothManager.LOG_TAG, "UNPAUSING SCAN");
+				unpauseScan();
+			}
+		}
+	};
+	
 	BroadcastReceiver requestStateReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -172,7 +231,7 @@ public class SweetToothManagerService extends Service {
 		boolean bleSupported = false;
 		boolean bleEnabled = false;
 		
-		if (android.os.Build.VERSION.SDK_INT < 18) {
+		if (useSweetTooth()) {
 			bleSupported = sweetToothManager.isBLESupported();
 			bleEnabled = sweetToothManager.isBLEEnabled();
 		} else {

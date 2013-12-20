@@ -355,7 +355,7 @@ public class NativeSweetToothManagerV2 implements ISweetToothManager {
 //			Handler mainHandler = new Handler(context.getMainLooper());
 //			mainHandler.post(myRunnable);
 			
-			Intent intent = new Intent("com.joshholtz.sweettooth.SCAN_LE");
+			Intent intent = new Intent(BROADCAST_SCAN_LE);
 			intent.putExtra("device", device);
 			intent.putExtra("rssi", rssi);
 			intent.putExtra("scanRecord", scanRecord);
