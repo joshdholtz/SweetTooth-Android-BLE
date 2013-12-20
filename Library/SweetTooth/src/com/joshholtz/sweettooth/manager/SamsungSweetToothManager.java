@@ -27,19 +27,8 @@ import com.samsung.android.sdk.bt.gatt.BluetoothGattService;
 
 public class SamsungSweetToothManager implements ISweetToothManager {
 
-	/**
-	 * Singletony stuff
-	 */
-	private SamsungSweetToothManager() {
+	public SamsungSweetToothManager() {
 		
-	}
-
-	private static class LazyHolder {
-		private static final SamsungSweetToothManager INSTANCE = new SamsungSweetToothManager();
-	}
-	
-	public static SamsungSweetToothManager getInstance() {
-		return LazyHolder.INSTANCE;
 	}
 	
 	/**

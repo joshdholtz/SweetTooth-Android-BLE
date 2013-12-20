@@ -24,6 +24,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.CompoundButton;
 import android.widget.ListView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
@@ -46,6 +47,7 @@ public class ServiceActivity extends Activity {
         setContentView(R.layout.activity_main);
         
         this.registerReceiver(scanReceiver, new IntentFilter(SweetToothManagerService.BROADCAST_SCAN_DISCOVERED));
+        this.registerReceiver(stateReceiver, new IntentFilter(SweetToothManagerService.BROADCAST_STATE));
         
         Intent serviceIntent = new Intent(this, SweetToothManagerService.class);
 		this.startService(serviceIntent);
@@ -164,6 +166,7 @@ public class ServiceActivity extends Activity {
 
 		@Override
 		public void onReceive(Context context, Intent data) {
+			
 			BluetoothDevice device = data.getParcelableExtra("device");
 			int rssi = data.getIntExtra("rssi", 0);
 			final byte[] scanRecord = data.getByteArrayExtra("scanRecord");
@@ -182,6 +185,17 @@ public class ServiceActivity extends Activity {
 				lstViewAdapter.notifyDataSetChanged();
 			}
 				
+		}
+		
+	};
+	
+	BroadcastReceiver stateReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent data) {
+			Toast.makeText(getApplicationContext(), "Supported - " + data.getBooleanExtra("ble_supported", false), Toast.LENGTH_SHORT).show();
+			Toast.makeText(getApplicationContext(), "Enabled - " + data.getBooleanExtra("ble_enabled", false), Toast.LENGTH_SHORT).show();
+			Toast.makeText(getApplicationContext(), "Scanning - " + data.getBooleanExtra("scanning", false), Toast.LENGTH_SHORT).show();
 		}
 		
 	};

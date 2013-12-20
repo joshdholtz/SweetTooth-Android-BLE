@@ -35,27 +35,20 @@ import android.util.Log;
 public class NativeSweetToothManagerV2 implements ISweetToothManager {
 	
 	public final static int REQUEST_BLE_ENABLE = 3011989;
-	private final static String BROADCAST_SCAN_LE = "com.joshholtz.sweettooth.SCAN_LE";
+	private final static String SCAN_LE = ".SWEETTOOTH_MANAGER_SCAN_LE";
+	private String BROADCAST_SCAN_LE = "com.joshholtz.sweettooth" + SCAN_LE;
 	
-	/**
-	 * Singletony stuff
-	 */
-	private NativeSweetToothManagerV2() {
+	public NativeSweetToothManagerV2() {
 		
-	}
-
-	private static class LazyHolder {
-		private static final NativeSweetToothManagerV2 INSTANCE = new NativeSweetToothManagerV2();
 	}
 
 	@Override
 	public void initInstance(Application application) {
 		context = application.getApplicationContext();
+		
+		BROADCAST_SCAN_LE = context.getPackageName() + SCAN_LE;
+		
 		initBluetoothManager();
-	}
-	
-	public static NativeSweetToothManagerV2 getInstance() {
-		return LazyHolder.INSTANCE;
 	}
 	
 	/**
@@ -371,24 +364,6 @@ public class NativeSweetToothManagerV2 implements ISweetToothManager {
 			
 			context.getApplicationContext().sendBroadcast(intent);
 		}
-	};
-	
-	BroadcastReceiver startReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent data) {
-			SweetToothManager.getInstance().start();
-		}
-		
-	};
-	
-	BroadcastReceiver stopReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent data) {
-			SweetToothManager.getInstance().stop();
-		}
-		
 	};
 	
 	BroadcastReceiver scanReceiver = new BroadcastReceiver() {

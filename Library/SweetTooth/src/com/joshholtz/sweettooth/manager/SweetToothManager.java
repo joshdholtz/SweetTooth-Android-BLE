@@ -15,16 +15,16 @@ public class SweetToothManager implements ISweetToothManager {
 	
 	private ISweetToothManager duck;
 	
-	private SweetToothManager() {
+	public SweetToothManager() {
 		if (android.os.Build.VERSION.SDK_INT >= 18) {
 			Log.d(LOG_TAG, "Using NativeSweetToothManager");
-			duck = NativeSweetToothManagerV2.getInstance();
+			duck = new NativeSweetToothManagerV2();
 		} else if (android.os.Build.VERSION.SDK_INT == 17 && android.os.Build.MANUFACTURER.toLowerCase().contains("samsung")) {
 			try {
 				Class.forName("com.samsung.android.sdk.bt.gatt.BluetoothGatt");
 				
 				Log.d(LOG_TAG, "Using SamsungSweetToothManager");
-				duck = SamsungSweetToothManager.getInstance();
+				duck = new SamsungSweetToothManager();
 			} catch (Exception e) {
 				Log.d(LOG_TAG, "Using NoneSweetToothManager");
 			}
@@ -47,14 +47,6 @@ public class SweetToothManager implements ISweetToothManager {
 	
 	public ISweetToothManager getManager() {
 		return duck;
-	}
-	
-	public static SweetToothManager getInstance() {
-		return LazyHolder.INSTANCE;
-	}
-	
-	private static class LazyHolder {
-		private static final SweetToothManager INSTANCE = new SweetToothManager();
 	}
 	
 	/**

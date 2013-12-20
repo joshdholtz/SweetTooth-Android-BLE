@@ -32,25 +32,14 @@ public class NativeSweetToothManager implements ISweetToothManager {
 	
 	public final static int REQUEST_BLE_ENABLE = 3011989;
 	
-	/**
-	 * Singletony stuff
-	 */
-	private NativeSweetToothManager() {
+	public NativeSweetToothManager() {
 		
-	}
-
-	private static class LazyHolder {
-		private static final NativeSweetToothManager INSTANCE = new NativeSweetToothManager();
 	}
 
 	@Override
 	public void initInstance(Application application) {
 		context = application.getApplicationContext();
 		initBluetoothManager();
-	}
-	
-	public static NativeSweetToothManager getInstance() {
-		return LazyHolder.INSTANCE;
 	}
 	
 	/**

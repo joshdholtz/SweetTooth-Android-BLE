@@ -153,7 +153,7 @@ public class MainActivity extends Activity implements SweetToothListener {
 //					bluetoothAdapter.startLeScan(leScanCallback);
 					
 //					SweetToothManager.getInstance().start();
-					SweetToothManager.getInstance().startOnInterval(2000, 2000);
+//					SweetToothManager.getInstance().startOnInterval(2000, 2000);
 //					
 //					SweetToothManager manager = SweetToothManager.getInstance();
 //					if (manager.getManager() instanceof SamsungSweetToothManager) {
@@ -178,7 +178,7 @@ public class MainActivity extends Activity implements SweetToothListener {
 						timer.cancel();
 					}
 					timer = null;
-					SweetToothManager.getInstance().stop();
+//					SweetToothManager.getInstance().stop();
 //					bluetoothAdapter.stopLeScan(leScanCallback);
 				}
 			}        	
@@ -224,12 +224,12 @@ public class MainActivity extends Activity implements SweetToothListener {
         lstView.setAdapter(lstViewAdapter);
         
         // Initializing SweetToothManager
-        SweetToothManager.getInstance().initInstance(getApplication());
-        SweetToothManager.getInstance().addListener(this);
+//        SweetToothManager.getInstance().initInstance(getApplication());
+//        SweetToothManager.getInstance().addListener(this);
         
 
-        Toast.makeText(this, "BLE Supported - " + SweetToothManager.getInstance().isBLESupported(), Toast.LENGTH_SHORT).show();
-        Toast.makeText(this, "BLE Enabled - " + SweetToothManager.getInstance().isBLEEnabled(), Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "BLE Supported - " + SweetToothManager.getInstance().isBLESupported(), Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "BLE Enabled - " + SweetToothManager.getInstance().isBLEEnabled(), Toast.LENGTH_SHORT).show();
     }
 
 
