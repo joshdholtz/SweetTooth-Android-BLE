@@ -153,6 +153,10 @@ public class SweetToothManagerService extends Service {
 			Log.d(SweetToothManager.LOG_TAG, "startScan() - bluetoothAdapter");
 			this.onScanningStateChange(true);
 			
+			if (intervalTimer != null) {
+				intervalTimer.cancel();
+			}
+			
 			intervalTimer = new Timer();
 			intervalTimer.scheduleAtFixedRate(new TimerTask() {
 				
