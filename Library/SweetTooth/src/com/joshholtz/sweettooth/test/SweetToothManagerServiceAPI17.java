@@ -31,7 +31,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
-public class SweetToothManagerService extends Service {
+public class SweetToothManagerServiceAPI17 extends Service {
 	
 	public static String BROADCAST_START = "com.joshholtz.sweettooth.SERVICE_SCAN_START";
 	public static String BROADCAST_STOP = "com.joshholtz.sweettooth.SERVICE_SCAN_STOP";
@@ -50,7 +50,7 @@ public class SweetToothManagerService extends Service {
 	private BluetoothAdapter.LeScanCallback leScanCallback;
 	private SweetToothListener sweetToothListener;
 	
-	public SweetToothManagerService() {
+	public SweetToothManagerServiceAPI17() {
 		super();
 	}
 	
@@ -68,20 +68,18 @@ public class SweetToothManagerService extends Service {
 		this.registerReceiver(pauseReceiver, new IntentFilter(BROADCAST_PAUSE));
 		this.registerReceiver(requestStateReceiver, new IntentFilter(REQUEST_BROADCAST_STATE));
 		
-		if (!this.useSweetTooth()) {
-			leScanCallback = new BluetoothAdapter.LeScanCallback() {
-				@Override
-				public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-					Log.d(SweetToothManager.LOG_TAG, "Found onLeScan - " + device.getAddress());
-					handleScan(device, rssi, scanRecord);
-				}
-			};
-		}
+		leScanCallback = new BluetoothAdapter.LeScanCallback() {
+			@Override
+			public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+				Log.d(SweetToothManager.LOG_TAG, "Found onLeScan - " + device.getAddress());
+				handleScan(device, rssi, scanRecord);
+			}
+		};
 		sweetToothListener = new SweetToothListener() {
 
 			@Override
 			public void onScanningStateChange(boolean scanning) {
-				SweetToothManagerService.this.onScanningStateChange(scanning);
+				SweetToothManagerServiceAPI17.this.onScanningStateChange(scanning);
 			}
 
 			@Override
@@ -168,7 +166,7 @@ public class SweetToothManagerService extends Service {
 				@Override
 				public void run() {
 					isPaused = !isPaused;
-					pauseScan(SweetToothManagerService.this.getApplicationContext(), isPaused);
+					pauseScan(SweetToothManagerServiceAPI17.this.getApplicationContext(), isPaused);
 				}
 				
 			}, 10, 2000);
@@ -252,8 +250,8 @@ public class SweetToothManagerService extends Service {
 		
 		Intent intent = new Intent(BROADCAST_STATE);
 		intent.putExtra("scanning", isScanning);
-		intent.putExtra("ble_supported", bleSupported);
-		intent.putExtra("ble_enabled", bleEnabled);
+		intent.putExtra("ble_supported", bleEnabled);
+		intent.putExtra("ble_enabled", bleSupported);
 		
 		sendBroadcast(intent);
 	}
