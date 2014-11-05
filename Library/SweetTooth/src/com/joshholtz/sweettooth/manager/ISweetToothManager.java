@@ -14,6 +14,8 @@ public interface ISweetToothManager {
 	public final static String LOG_TAG = "SweetTooth";
 
 	public void initInstance(Application application);
+	public boolean isBLESupported();
+	public boolean isBLEEnabled();
 	
 	public void addListener(SweetToothListener listener);
 	public void removeListener(SweetToothListener listener);
@@ -23,6 +25,7 @@ public interface ISweetToothManager {
 	public void stop();
 	public void startOnInterval(long scanPeriodOn, long scanPeriodOff);
 	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff);
+	public boolean isScanning();
 	
 	public void readCharacteristics(BluetoothDevice device, final UUID serviceUUID, UUID[] characteristicUUIDs, final long timeout, final SweetToothCharacteristicListener listener);
 	

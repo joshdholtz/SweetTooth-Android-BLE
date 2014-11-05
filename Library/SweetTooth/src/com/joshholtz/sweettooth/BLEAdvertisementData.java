@@ -113,6 +113,10 @@ public class BLEAdvertisementData extends HashMap<String, String[]> {
 		return hexStringToStringValue( this.get(LOCAL_NAME_SHORTENED) );
 	}
 	
+	public String get48BitValue(String key) {
+		return stringArrayToString( parseToBitArray( this.get(key), 48 ) );
+	}
+	
 	/**
 	 * Takes our array of hex string and splits it into array of strings containing a certain number of bits.
 	 * @param hex

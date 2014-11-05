@@ -2,6 +2,7 @@ package com.joshholtz.sweettooth.manager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
@@ -10,6 +11,8 @@ import java.util.UUID;
 
 import com.joshholtz.sweettooth.SweetToothCharacteristicListener;
 import com.joshholtz.sweettooth.SweetToothListener;
+import com.joshholtz.sweettooth.test.MainActivity;
+import com.joshholtz.sweettooth.test.MainActivity.BluetoothDeviceWrapper;
 
 import android.app.Activity;
 import android.app.Application;
@@ -24,21 +27,27 @@ import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.util.Log;
 
-public class NativeSweetToothManager implements ISweetToothManager {
+public class NativeSweetToothManagerV2 implements ISweetToothManager {
 	
 	public final static int REQUEST_BLE_ENABLE = 3011989;
+	private final static String SCAN_LE = ".SWEETTOOTH_MANAGER_SCAN_LE";
+	private String BROADCAST_SCAN_LE = "com.joshholtz.sweettooth" + SCAN_LE;
 	
-	public NativeSweetToothManager() {
+	public NativeSweetToothManagerV2() {
 		
 	}
 
 	@Override
 	public void initInstance(Application application) {
 		context = application.getApplicationContext();
+		
+		BROADCAST_SCAN_LE = context.getPackageName() + SCAN_LE;
+		
 		initBluetoothManager();
 	}
 	
@@ -56,6 +65,8 @@ public class NativeSweetToothManager implements ISweetToothManager {
 		
 	private void initBluetoothManager() {
 		if (context != null) {
+			context.registerReceiver(scanReceiver, new IntentFilter(BROADCAST_SCAN_LE));
+			
 			if (android.os.Build.VERSION.SDK_INT >= 18) {
 				bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 				if (bluetoothManager != null) {
@@ -334,18 +345,40 @@ public class NativeSweetToothManager implements ISweetToothManager {
 		
 		@Override
 		public void onLeScan(final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
-			Runnable myRunnable = new Runnable() {
-				@Override
-				public void run() {
-					for (SweetToothListener listener : listeners) {
-						listener.onDiscoveredDevice(device, rssi, scanRecord);
-					}
-				}
-			};
+//			Runnable myRunnable = new Runnable() {
+//				@Override
+//				public void run() {
+//					
+//				}
+//			};
+//			
+//			Handler mainHandler = new Handler(context.getMainLooper());
+//			mainHandler.post(myRunnable);
 			
-			Handler mainHandler = new Handler(context.getMainLooper());
-			mainHandler.post(myRunnable);
+			Intent intent = new Intent(BROADCAST_SCAN_LE);
+			intent.putExtra("device", device);
+			intent.putExtra("rssi", rssi);
+			intent.putExtra("scanRecord", scanRecord);
+			
+			Log.d(SweetToothManager.LOG_TAG, "Sending broadcast");
+			
+			context.getApplicationContext().sendBroadcast(intent);
 		}
+	};
+	
+	BroadcastReceiver scanReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent data) {
+			BluetoothDevice device = data.getParcelableExtra("device");
+			int rssi = data.getIntExtra("rssi", 0);
+			final byte[] scanRecord = data.getByteArrayExtra("scanRecord");
+			
+			for (SweetToothListener listener : listeners) {
+				listener.onDiscoveredDevice(device, rssi, scanRecord);
+			}
+		}
+		
 	};
 	
 }

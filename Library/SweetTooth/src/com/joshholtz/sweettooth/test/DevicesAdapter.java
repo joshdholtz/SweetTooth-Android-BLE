@@ -2,11 +2,12 @@ package com.joshholtz.sweettooth.test;
 
 import java.util.List;
 
-import com.joshholtz.sweettooth.test.MainActivity.BluetoothDeviceWrapper;
+import com.joshholtz.sweettooth.test.ServiceActivity.BluetoothDeviceWrapper;
 import com.joshholtz.sweetttooth.R;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,7 +34,10 @@ public class DevicesAdapter extends ArrayAdapter<BluetoothDeviceWrapper> {
         // Gets the list from the items list
         if (device != null) {
         	TextView txtName = (TextView) v.findViewById(R.id.list_item_device_txt_name);
-        	txtName.setText(device.device.getName());
+        	TextView txtAddress = (TextView) v.findViewById(R.id.list_item_device_txt_address);
+        	
+        	txtName.setText(device.getName());
+        	txtAddress.setText(device.device.getAddress());
         }
 
         return v;

@@ -15,28 +15,38 @@ public class SweetToothManager implements ISweetToothManager {
 	
 	private ISweetToothManager duck;
 	
-	private SweetToothManager() {
+	public SweetToothManager() {
 		if (android.os.Build.VERSION.SDK_INT >= 18) {
 			Log.d(LOG_TAG, "Using NativeSweetToothManager");
-			duck = NativeSweetToothManager.getInstance();
+			duck = new NativeSweetToothManagerV2();
 		} else if (android.os.Build.VERSION.SDK_INT == 17 && android.os.Build.MANUFACTURER.toLowerCase().contains("samsung")) {
-			Log.d(LOG_TAG, "Using SamsungSweetToothManager");
-			duck = SamsungSweetToothManager.getInstance();
+			try {
+				Class.forName("com.samsung.android.sdk.bt.gatt.BluetoothGatt");
+				
+				Log.d(LOG_TAG, "Using SamsungSweetToothManager");
+				duck = new SamsungSweetToothManager();
+			} catch (Exception e) {
+				Log.d(LOG_TAG, "Using NoneSweetToothManager");
+			}
+		} else if (android.os.Build.VERSION.SDK_INT == 17 && android.os.Build.MANUFACTURER.toLowerCase().contains("motorola")) {
+			try {
+				Class.forName("com.motorola.bluetoothle.BluetoothGatt");
+				
+				Log.d(LOG_TAG, "Using MotorolaSweetToothManager");
+			} catch (Exception e) {
+				Log.d(LOG_TAG, "Using NoneSweetToothManager");
+			}
 		} else {
 			Log.d(LOG_TAG, "Using NoneSweetToothManager");
 		}
 	};
 	
+	public void setManagerInstance(ISweetToothManager manager) {
+		duck = manager;
+	}
+	
 	public ISweetToothManager getManager() {
 		return duck;
-	}
-	
-	public static SweetToothManager getInstance() {
-		return LazyHolder.INSTANCE;
-	}
-	
-	private static class LazyHolder {
-		private static final SweetToothManager INSTANCE = new SweetToothManager();
 	}
 	
 	/**
@@ -50,6 +60,8 @@ public class SweetToothManager implements ISweetToothManager {
 	 * @return boolean
 	 */
 	public static boolean scanRecordHasService(String serviceUUID, byte[] scanRecord) {
+		serviceUUID = serviceUUID.replaceAll("-", "");
+		
 		BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
 		return Arrays.asList(blueTipzData.get128BitServiceUUIDs()).contains(serviceUUID.toUpperCase());
 	}
@@ -58,6 +70,18 @@ public class SweetToothManager implements ISweetToothManager {
 	public void initInstance(Application application) {
 		if (duck == null) return;
 		duck.initInstance(application);
+	}
+	
+	@Override
+	public boolean isBLESupported() {
+		if (duck == null) return false;
+		return duck.isBLESupported();
+	}
+
+	@Override
+	public boolean isBLEEnabled() {
+		if (duck == null) return false;
+		return duck.isBLEEnabled();
 	}
 
 	@Override
@@ -100,6 +124,12 @@ public class SweetToothManager implements ISweetToothManager {
 	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff) {
 		if (duck == null) return;
 		duck.startOnInterval(uuids, scanPeriodOn, scanPeriodOff);
+	}
+	
+	@Override
+	public boolean isScanning() {
+		if (duck == null) return false;
+		return duck.isScanning();
 	}
 
 	@Override

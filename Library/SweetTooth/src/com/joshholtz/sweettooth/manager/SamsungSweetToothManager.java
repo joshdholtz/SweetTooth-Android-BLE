@@ -27,19 +27,8 @@ import com.samsung.android.sdk.bt.gatt.BluetoothGattService;
 
 public class SamsungSweetToothManager implements ISweetToothManager {
 
-	/**
-	 * Singletony stuff
-	 */
-	private SamsungSweetToothManager() {
+	public SamsungSweetToothManager() {
 		
-	}
-
-	private static class LazyHolder {
-		private static final SamsungSweetToothManager INSTANCE = new SamsungSweetToothManager();
-	}
-	
-	public static SamsungSweetToothManager getInstance() {
-		return LazyHolder.INSTANCE;
 	}
 	
 	/**
@@ -72,6 +61,23 @@ public class SamsungSweetToothManager implements ISweetToothManager {
 	        	Log.d(LOG_TAG, "getting profileeee - " + result);
 	        }
 		}
+	}
+	
+	/**
+	 * Returns true if BLE is supported on this device.
+	 * @param context
+	 * @return
+	 */
+	public boolean isBLESupported() {
+		return bluetoothAdapter != null;
+	}
+	
+	/**
+	 * Returns true if BLE is enabled.
+	 * @return
+	 */
+	public boolean isBLEEnabled() {
+		return bluetoothAdapter != null && bluetoothAdapter.isEnabled();
 	}
 
 	@Override
@@ -150,6 +156,11 @@ public class SamsungSweetToothManager implements ISweetToothManager {
 	@Override
 	public void startOnInterval(UUID[] uuids, long scanPeriodOn, long scanPeriodOff) {
 		start(uuids);
+	}
+	
+	@Override
+	public boolean isScanning() {
+		return this.scanning;
 	}
 
 	@Override
