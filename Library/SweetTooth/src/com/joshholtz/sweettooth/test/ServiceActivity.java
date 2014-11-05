@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.joshdholtz.sentry.Sentry;
+import com.joshholtz.sweettooth.BLEAdvertisementData;
+//import com.joshdholtz.sentry.Sentry;
 import com.joshholtz.sweettooth.manager.SweetToothManager;
 import com.joshholtz.sweettooth.test.MainActivity.BluetoothDeviceWrapper;
 import com.joshholtz.sweetttooth.R;
@@ -179,10 +180,16 @@ public class ServiceActivity extends Activity {
 			}
 			
 			Log.d(SweetToothManager.LOG_TAG, "adding device - " + devices.size());
-			if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd858", scanRecord)) {
+			if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd858", scanRecord) ||
+					SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd859", scanRecord)) {
 				devices.add(wrapper);
 				Collections.sort(devices);
 				lstViewAdapter.notifyDataSetChanged();
+				
+				if (SweetToothManager.scanRecordHasService("beb54859b4b64affbc7fa12e8a3cd859", scanRecord)) {
+					BLEAdvertisementData blueTipzData = BLEAdvertisementData.parseAdvertisementData(scanRecord);
+					Log.d(SweetToothManager.LOG_TAG, "MANU - " + blueTipzData.get48BitValue(BLEAdvertisementData.MANUFACTURER_SPECIFIC_DATA));
+				}
 			}
 				
 		}
